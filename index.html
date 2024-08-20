@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Prediction</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Sales Prediction Model</h1>
+        <form id="prediction-form">
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="store">Store</label>
+                    <input type="number" id="store" name="store" oninput="enforceMaxValue(this, 45)">
+                </div>
+                <div class="input-group">
+                    <label for="month">Month</label>
+                    <input type="number" id="month" name="month" oninput="enforceMaxValue(this, 12)">
+                </div>
+            </div>
+
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="day_of_week">Day of the Week</label>
+                    <input type="number" id="day_of_week" name="day_of_week" oninput="enforceMaxValue(this, 7)">
+                </div>
+                <div class="input-group">
+                    <label for="temperature">Temperature</label>
+                    <input type="number" id="temperature" name="temperature">
+                </div>
+            </div>
+
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="fuel_price">Fuel Price</label>
+                    <input type="number" id="fuel_price" name="fuel_price">
+                </div>
+                <div class="input-group">
+                    <label for="holiday_flag">Holiday</label>
+                    <input type="number" id="holiday_flag" name="Holiday" oninput="enforceMaxValue(this, 1)">
+                </div>
+            </div>
+
+            <input type="submit" value="Predict">
+        </form>
+    </div>
+
+    <!-- Result Display -->
+    <div id="result-display" class="result-display"></div>
+
+    <script>
+        function enforceMaxValue(input, maxValue) {
+            if (input.value > maxValue) {
+                input.value = maxValue;
+            }
+            if (input.value < 0) {
+                input.value = 0;
+            }
+        }
+
+        document.getElementById('prediction-form').addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const store = document.getElementById('store').value;
+            const month = document.getElementById('month').value;
+            const day_of_week = document.getElementById('day_of_week').value;
+            const temperature = document.getElementById('temperature').value;
+            const fuel_price = document.getElementById('fuel_price').value;
+            const holiday_flag = document.getElementById('holiday_flag').value;
+
+            const inputData = {
+                Store: parseInt(store, 10),
+                Month: parseInt(month, 10),
+                DayOfWeek: parseInt(day_of_week, 10),
+                Holiday_Flag: parseInt(holiday_flag, 10),
+                Temperature: parseFloat(temperature),
+                Fuel_Price: parseFloat(fuel_price),
+                CPI: 119.0964,
+                Unemployment: 5.106
+            };
+
+            try {
+                const response = await fetch('https://54td1t8dhd.execute-api.eu-north-1.amazonaws.com/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ body: JSON.stringify(inputData) })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const responseBody = await response.json();
+                console.log('API Response:', responseBody);
+
+                const bodyContent = JSON.parse(responseBody.body);
+                console.log('Parsed Body:', bodyContent);
+
+                const predictedSales = bodyContent.predicted_sales ? bodyContent.predicted_sales['Predicted Weekly Sales'] : null;
+
+                const resultText = predictedSales !== null
+                    ? `Predicted Weekly Sales: ${predictedSales}`
+                    : 'No prediction result available.';
+
+                document.getElementById('result-display').innerText = resultText;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result-display').innerText = 'An error occurred. Please try again.';
+            }
+        });
+    </script>
+</body>
+
+</html>
